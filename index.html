@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>裏スキマ | SECRET ROUTE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       裏スキマ | SECRET ROUTE - 単体HTML版
+       
+       ■ 編集ガイド
+       - テキストの変更: HTMLの該当テキストを直接編集
+       - 合言葉の変更: CORRECT_PASSWORD の値を変更
+       - 画像の変更: img タグの src を差し替え
+       - 色の変更: :root のカスタムプロパティを変更
+       - カードの追加/削除: cards-grid 内の .secret-card を追加/削除
+       ============================================================ */
+
+    /* --- カスタムプロパティ（色・フォント） --- */
+    :root {
+      --neon-pink: #ff2d7b;
+      --neon-blue: #4dc9f6;
+      --neon-amber: #f5a623;
+      --neon-green: #39d98a;
+      --neon-lime: #b8ff4d;
+      --dark-void: #0d0d1a;
+      --dark-surface: #14142b;
+      --dark-card: #1a1a33;
+      --foreground: #e8e0d0;
+      --muted: #6b6580;
+      --border-color: #2a2a44;
+      --font-display: 'Zen Kaku Gothic New', sans-serif;
+      --font-body: 'Noto Sans JP', sans-serif;
+      --font-mono: 'Space Grotesk', monospace;
+    }
+
+    /* --- リセット & ベース --- */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--dark-void);
+      color: var(--foreground);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { border: none; background: none; cursor: pointer; color: inherit; font: inherit; }
+    input { border: none; background: none; color: inherit; font: inherit; outline: none; }
+
+    /* --- スクロールバー --- */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--dark-void); }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 45, 123, 0.5); }
+
+    /* --- コンテナ --- */
+    .container {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    @media (min-width: 640px) { .container { padding: 0 1.5rem; } }
+    @media (min-width: 1024px) { .container { padding: 0 2rem; } }
+
+    /* --- ノイズオーバーレイ --- */
+    .noise-overlay {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* --- スキャンライン --- */
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* --- ネオングロウ --- */
+    .neon-glow-pink {
+      text-shadow: 0 0 7px var(--neon-pink), 0 0 20px rgba(255,45,123,0.5), 0 0 40px rgba(255,45,123,0.3);
+    }
+    .neon-glow-amber {
+      text-shadow: 0 0 7px var(--neon-amber), 0 0 20px rgba(245,166,35,0.5), 0 0 40px rgba(245,166,35,0.3);
+    }
+    .neon-glow-blue {
+      text-shadow: 0 0 7px var(--neon-blue), 0 0 20px rgba(77,201,246,0.5), 0 0 40px rgba(77,201,246,0.3);
+    }
+    .neon-glow-lime {
+      text-shadow: 0 0 7px var(--neon-lime), 0 0 20px rgba(184,255,77,0.55), 0 0 44px rgba(184,255,77,0.32);
+    }
+
+    /* --- ネオンフリッカーアニメーション --- */
+    @keyframes neon-flicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+      20%, 24%, 55% { opacity: 0.6; }
+    }
+    .animate-neon-flicker { animation: neon-flicker 3s infinite; }
+
+    /* --- パルスアニメーション --- */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .pulse { animation: pulse-dot 2s ease-in-out infinite; }
+
+    /* --- フェードイン --- */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes scaleY-in {
+      from { transform: scaleY(0); }
+      to { transform: scaleY(1); }
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-80px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes loadingBar {
+      from { width: 0%; }
+      to { width: 100%; }
+    }
+    @keyframes bounce-scroll {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* --- スクロールアニメーション --- */
+    .scroll-animate {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .scroll-animate.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ============================================================
+       ゲートページ（パスワード入力画面）
+       ============================================================ */
+    #gate-page {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      transition: opacity 0.8s, transform 0.8s, filter 0.8s;
+    }
+    #gate-page.exiting {
+      opacity: 0;
+      transform: scale(1.15);
+      filter: blur(10px);
+    }
+    #gate-page .bg-img {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    #gate-page .bg-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transform: scale(1.1);
+      animation: fadeIn 2s ease-out 0.3s forwards;
+    }
+    #gate-page .bg-img img.loaded {
+      opacity: 0.35;
+      transform: scale(1);
+    }
+    #gate-page .bg-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--dark-void), rgba(13,13,26,0.75), rgba(13,13,26,0.3));
+    }
+    #gate-page .bg-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, var(--dark-void) 100%);
+    }
+
+    .gate-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 0 1.5rem;
+      max-width: 28rem;
+      width: 100%;
+      opacity: 0;
+      animation: fadeInUp 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.5s forwards;
+    }
+    @media (min-width: 640px) { .gate-content { gap: 2rem; } }
+
+    .gate-line-top {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(to bottom, transparent, rgba(245,166,35,0.4));
+      transform-origin: top;
+      animation: scaleY-in 0.8s ease-out 0.8s both;
+    }
+
+    .gate-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: rgba(245,166,35,0.6);
+      opacity: 0;
+      animation: fadeIn 1s ease-out 1.1s forwards;
+    }
+
+    .gate-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 6vw, 3.75rem);
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.15;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease-out 1.3s forwards;
+    }
+    .gate-title .amber { color: var(--neon-amber); }
+    .gate-title .dim { color: rgba(232,224,208,0.8); }
+
+    .gate-desc {
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: rgba(107,101,128,0.7);
+      text-align: center;
+      line-height: 1.9;
+      max-width: 20rem;
+      opacity: 0;
+      animation: fadeIn 0.8s ease-out 1.6s forwards;
+    }
+
+    .gate-visitor {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: rgba(107,101,128,0.5);
+      opacity: 0;
+      animation: fadeIn 0.8s ease-out 1.8s forwards;
+    }
+    .gate-visitor .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--neon-green);
+    }
+    .gate-visitor .count { color: var(--neon-green); font-weight: 600; }
+
+    .gate-form {
+      width: 100%;
+      max-width: 20rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease-out 2s forwards;
+    }
+
+    .gate-input-wrap {
+      position: relative;
+    }
+    .gate-input-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: rgba(107,101,128,0.4);
+      transition: color 0.3s;
+    }
+    .gate-input-wrap:focus-within svg.lock-icon {
+      color: rgba(245,166,35,0.6);
+    }
+    .gate-input {
+      width: 100%;
+      background: rgba(13,13,26,0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(42,42,68,0.3);
+      padding: 14px 18px 14px 40px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      color: var(--foreground);
+      transition: border-color 0.5s;
+    }
+    .gate-input::placeholder { color: rgba(107,101,128,0.3); }
+    .gate-input:focus { border-color: rgba(245,166,35,0.4); }
+    .gate-input.error { border-color: rgba(255,60,60,0.6); }
+
+    .gate-error {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: rgba(255,60,60,0.8);
+      text-align: center;
+      height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: all 0.3s;
+    }
+    .gate-error.show { height: 20px; opacity: 1; }
+
+    .gate-submit {
+      width: 100%;
+      background: transparent;
+      border: 1px solid rgba(245,166,35,0.25);
+      color: rgba(245,166,35,0.9);
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      transition: all 0.5s;
+    }
+    .gate-submit:hover {
+      background: rgba(245,166,35,0.08);
+      border-color: rgba(245,166,35,0.5);
+      box-shadow: 0 0 20px rgba(245,166,35,0.15);
+    }
+
+    .gate-hint {
+      font-family: var(--font-body);
+      font-size: 10px;
+      color: rgba(107,101,128,0.2);
+      margin-top: 0.5rem;
+      opacity: 0;
+      animation: fadeIn 1s ease-out 2.5s forwards;
+    }
+
+    .gate-line-bottom {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(to top, transparent, rgba(245,166,35,0.2));
+      transform-origin: bottom;
+      animation: scaleY-in 0.8s ease-out 2.8s both;
+    }
+
+    /* --- アンロック画面 --- */
+    #unlock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--dark-void);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #unlock-screen.active { display: flex; }
+    .unlock-text {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      letter-spacing: 0.4em;
+      color: var(--neon-amber);
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    .unlock-bar-wrap {
+      margin-top: 24px;
+      width: 224px;
+      height: 1px;
+      background: var(--dark-surface);
+      overflow: hidden;
+    }
+    .unlock-bar {
+      height: 100%;
+      background: linear-gradient(to right, rgba(245,166,35,0.5), var(--neon-amber), rgba(245,166,35,0.5));
+      animation: loadingBar 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    /* ============================================================
+       メインページ（秘密基地）
+       ============================================================ */
+    #main-page {
+      display: none;
+    }
+    #main-page.active { display: block; }
+
+    /* --- ナビバー --- */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      transition: all 0.7s;
+      animation: slideDown 0.8s ease-out 0.3s both;
+    }
+    @media (min-width: 640px) { .navbar { height: 64px; } }
+    .navbar.scrolled {
+      background: rgba(13,13,26,0.7);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(42,42,68,0.05);
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: rgba(255,45,123,0.8);
+      transition: color 0.3s;
+    }
+    .nav-logo:hover { color: var(--neon-pink); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+    }
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(107,101,128,0.5);
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: rgba(232,224,208,0.8); }
+
+    /* モバイルメニュー */
+    .mobile-menu-btn {
+      display: none;
+      color: rgba(107,101,128,0.5);
+      transition: color 0.3s;
+      padding: 4px;
+    }
+    .mobile-menu-btn:hover { color: var(--foreground); }
+    .mobile-menu-btn svg { width: 16px; height: 16px; }
+    @media (max-width: 639px) {
+      .nav-links { display: none; }
+      .mobile-menu-btn { display: block; }
+    }
+    .mobile-menu {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(13,13,26,0.98);
+      backdrop-filter: blur(24px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(107,101,128,0.6);
+      transition: color 0.3s;
+    }
+    .mobile-menu a:hover { color: var(--neon-pink); }
+
+    /* --- ヒーローセクション --- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hero .bg-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .hero .bg-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+    }
+    .hero .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(13,13,26,0.4), rgba(13,13,26,0.65), var(--dark-void));
+    }
+    .hero .bg-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 30%, var(--dark-void) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 0 1.5rem;
+      max-width: 48rem;
+    }
+    .hero-line {
+      width: 1px;
+      height: 64px;
+      background: linear-gradient(to bottom, transparent, rgba(77,201,246,0.3));
+      margin: 0 auto 2rem;
+      transform-origin: top;
+      animation: scaleY-in 1s ease-out 0.2s both;
+    }
+    .hero-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.6em;
+      text-transform: uppercase;
+      color: rgba(77,201,246,0.6);
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeIn 0.8s ease-out 0.5s forwards;
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 8vw, 6rem);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease-out 0.8s forwards;
+    }
+    .hero-title .white { color: rgba(232,224,208,0.9); }
+    .hero-title .pink { color: var(--neon-pink); }
+    .hero-title .lime { color: var(--neon-lime); }
+    .hero-desc {
+      font-family: var(--font-body);
+      font-size: clamp(13px, 2vw, 16px);
+      color: rgba(107,101,128,0.7);
+      line-height: 2;
+      max-width: 32rem;
+      margin: 0 auto 4rem;
+      opacity: 0;
+      animation: fadeIn 0.8s ease-out 1.2s forwards;
+    }
+    .scroll-btn {
+      color: rgba(107,101,128,0.3);
+      transition: color 0.5s;
+      opacity: 0;
+      animation: fadeIn 0.8s ease-out 1.8s forwards;
+    }
+    .scroll-btn:hover { color: rgba(255,45,123,0.6); }
+    .scroll-btn span {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      margin-bottom: 12px;
+    }
+    .scroll-btn svg {
+      width: 16px;
+      height: 16px;
+      margin: 0 auto;
+      animation: bounce-scroll 2.5s ease-in-out infinite;
+    }
+
+    /* --- Aboutセクション --- */
+    .about-section {
+      position: relative;
+      padding: 7rem 0;
+    }
+    @media (min-width: 640px) { .about-section { padding: 10rem 0; } }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    @media (min-width: 1024px) {
+      .about-grid { grid-template-columns: 0.9fr 1.1fr; gap: 6rem; }
+    }
+    .about-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: rgba(77,201,246,0.4);
+      margin-bottom: 1.25rem;
+    }
+    .about-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      font-weight: 900;
+      color: rgba(232,224,208,0.9);
+      line-height: 1.3;
+      margin-bottom: 2.5rem;
+    }
+    .about-title .amber { color: var(--neon-amber); }
+    .about-text {
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: rgba(107,101,128,0.7);
+      line-height: 2;
+      margin-bottom: 1.5rem;
+    }
+    .about-line {
+      margin-top: 2.5rem;
+      width: 64px;
+      height: 1px;
+      background: linear-gradient(to right, rgba(245,166,35,0.3), transparent);
+    }
+    .about-image-wrap {
+      position: relative;
+    }
+	@media (min-width: 1024px) {
+  .about-image-wrap {
+    width: 120%;
+    margin-left: -8%;
+    max-width: none;
+  }
+}
+    .about-image-wrap img {
+      width: 100%;
+      height: auto;
+	  display: block;
+    }
+    @media (min-width: 640px) { .about-image-wrap img { height: auto; } }
+    .about-image-wrap .border-offset-1 {
+      position: absolute;
+      top: -16px;
+      right: -16px;
+      width: 100%;
+      height: 100%;
+      border: 1px solid rgba(255,45,123,0.15);
+      pointer-events: none;
+    }
+    .about-image-wrap .border-offset-2 {
+      position: absolute;
+      bottom: -16px;
+      left: -16px;
+      width: 100%;
+      height: 100%;
+      border: 1px solid rgba(77,201,246,0.1);
+      pointer-events: none;
+    }
+
+    /* --- ディバイダー --- */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(42,42,68,0.2), transparent);
+    }
+
+    /* --- カードセクション --- */
+    .secrets-section {
+      position: relative;
+      padding: 7rem 0;
+    }
+    @media (min-width: 640px) { .secrets-section { padding: 10rem 0; } }
+    .secrets-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: rgba(255,45,123,0.4);
+      margin-bottom: 1.25rem;
+    }
+    .secrets-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      font-weight: 900;
+      color: rgba(232,224,208,0.9);
+    }
+    .secrets-header {
+      margin-bottom: 5rem;
+    }
+    @media (min-width: 640px) { .secrets-header { margin-bottom: 6rem; } }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    @media (min-width: 768px) {
+      .cards-grid {
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1.5rem;
+      }
+    }
+
+    /* --- 秘密カード --- */
+    .secret-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(42,42,68,0.15);
+      background: rgba(26,26,51,0.4);
+      backdrop-filter: blur(4px);
+      transition: all 0.7s;
+      cursor: default;
+    }
+    .secret-card.is-link {
+      display: block;
+      cursor: pointer;
+    }
+    .secret-card.is-link:focus-visible {
+      outline: 2px solid rgba(184,255,77,0.6);
+      outline-offset: 4px;
+    }
+    .secret-card.large { min-height: 380px; }
+    .secret-card.medium { min-height: 340px; }
+    @media (min-width: 640px) {
+      .secret-card.large { min-height: 440px; }
+      .secret-card.medium { min-height: 400px; }
+    }
+    @media (min-width: 768px) {
+      .secret-card.span-7 { grid-column: span 7; }
+      .secret-card.span-5 { grid-column: span 5; }
+    }
+
+    .secret-card:hover { transform: translateY(-4px); }
+    .secret-card.glow-pink { border-color: rgba(255,45,123,0.15); }
+    .secret-card.glow-pink:hover { border-color: rgba(255,45,123,0.4); box-shadow: 0 0 10px rgba(255,45,123,0.3), 0 0 25px rgba(255,45,123,0.12), inset 0 0 10px rgba(255,45,123,0.05); }
+    .secret-card.glow-blue { border-color: rgba(77,201,246,0.15); }
+    .secret-card.glow-blue:hover { border-color: rgba(77,201,246,0.4); box-shadow: 0 0 10px rgba(77,201,246,0.3), 0 0 25px rgba(77,201,246,0.12), inset 0 0 10px rgba(77,201,246,0.05); }
+    .secret-card.glow-amber { border-color: rgba(245,166,35,0.15); }
+    .secret-card.glow-amber:hover { border-color: rgba(245,166,35,0.4); box-shadow: 0 0 10px rgba(245,166,35,0.3), 0 0 25px rgba(245,166,35,0.12), inset 0 0 10px rgba(245,166,35,0.05); }
+    .secret-card.glow-green { border-color: rgba(57,217,138,0.15); }
+    .secret-card.glow-green:hover { border-color: rgba(57,217,138,0.4); box-shadow: 0 0 10px rgba(57,217,138,0.3), 0 0 25px rgba(57,217,138,0.12), inset 0 0 10px rgba(57,217,138,0.05); }
+
+    .card-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .card-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+      transform: scale(1.05);
+      transition: opacity 0.8s, transform 0.8s;
+    }
+    .secret-card:hover .card-bg img { opacity: 0.3; transform: scale(1.08); }
+    .card-bg .card-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+  to top,
+  rgba(0,0,0,0.2),
+  rgba(0,0,0,0.3),
+  rgba(0,0,0,0.4)
+);
+    }
+
+    .card-content {
+      position: relative;
+      z-index: 10;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    @media (min-width: 640px) { .card-content { padding: 2.25rem; } }
+
+    .card-label-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .card-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .card-dot.pink { background: var(--neon-pink); }
+    .card-dot.blue { background: var(--neon-blue); }
+    .card-dot.amber { background: var(--neon-amber); }
+    .card-dot.green { background: var(--neon-green); }
+    .card-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+    .card-label.pink { color: rgba(255,45,123,0.7); }
+    .card-label.blue { color: rgba(77,201,246,0.7); }
+    .card-label.amber { color: rgba(245,166,35,0.7); }
+    .card-label.green { color: rgba(57,217,138,0.7); }
+
+    .card-icon { margin-bottom: 1.5rem; }
+    .card-icon svg { width: 20px; height: 20px; }
+    .card-icon.pink { color: rgba(255,45,123,0.6); }
+    .card-icon.blue { color: rgba(77,201,246,0.6); }
+    .card-icon.amber { color: rgba(245,166,35,0.6); }
+    .card-icon.green { color: rgba(57,217,138,0.6); }
+
+    .card-spacer { flex: 1; }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: rgba(232,224,208,0.9);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+    .secret-card.large .card-title { font-size: clamp(1.1rem, 2.5vw, 1.5rem); }
+    .secret-card.medium .card-title { font-size: clamp(1rem, 2vw, 1.25rem); }
+
+    .card-desc {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: rgba(107,101,128,0.6);
+      line-height: 1.9;
+      max-width: 24rem;
+    }
+
+    .card-corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      opacity: 0.15;
+      transition: opacity 0.7s;
+    }
+    .secret-card:hover .card-corner { opacity: 0.4; }
+    .card-corner.top-right { top: 20px; right: 20px; border-top: 1px solid; border-right: 1px solid; }
+    .card-corner.bottom-left { bottom: 20px; left: 20px; border-bottom: 1px solid; border-left: 1px solid; }
+    .card-corner.pink { border-color: rgba(255,45,123,0.4); }
+    .card-corner.blue { border-color: rgba(77,201,246,0.4); }
+    .card-corner.amber { border-color: rgba(245,166,35,0.4); }
+    .card-corner.green { border-color: rgba(57,217,138,0.4); }
+
+    /* --- フッター --- */
+    .site-footer {
+      position: relative;
+      padding: 6rem 0;
+      border-top: 1px solid rgba(42,42,68,0.05);
+      text-align: center;
+    }
+    @media (min-width: 640px) { .site-footer { padding: 7rem 0; } }
+    .footer-brand {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: rgba(255,45,123,0.3);
+      letter-spacing: 0.2em;
+      margin-bottom: 1.5rem;
+    }
+    .footer-text {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: rgba(107,101,128,0.25);
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .footer-line {
+      width: 32px;
+      height: 1px;
+      background: rgba(42,42,68,0.1);
+      margin: 0 auto 2rem;
+    }
+    .footer-copy {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(107,101,128,0.15);
+      letter-spacing: 0.15em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       ゲートページ（パスワード入力画面）
+       合言葉を変更するには下の CORRECT_PASSWORD を編集してください
+       ============================================================ -->
+  <div id="gate-page">
+    <div class="bg-img">
+      <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663281517079/hxvfv5DxC7ZN7SCA68dpfq/hero-door-iVSoPapHg2vBDzgijZ5K2C.webp" alt="" id="gate-bg-img" />
+      <div class="bg-gradient"></div>
+      <div class="bg-vignette"></div>
+    </div>
+    <div class="noise-overlay"></div>
+    <div class="scanlines"></div>
+
+    <div class="gate-content">
+      <div class="gate-line-top"></div>
+      <p class="gate-label">Secret Route</p>
+      <h1 class="gate-title">
+        <span class="amber neon-glow-amber">よくぞ<br />
+			辿り着いた</span><br />
+      </h1>
+      <p class="gate-desc">
+        表には出していない、スキマの裏口。<br />
+        合言葉を知る人だけ、その先へ進める。
+      </p>
+      <div class="gate-visitor">
+        <span class="dot pulse"></span>
+        <span>このページを見つけた人　現在 <span class="count" id="visitor-count">42</span> 人</span>
+      </div>
+      <form class="gate-form" id="gate-form">
+        <div class="gate-input-wrap">
+          <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="text" class="gate-input" id="password-input" placeholder="合言葉を入力" autocomplete="off" />
+        </div>
+        <div class="gate-error" id="gate-error">合言葉が違うようだ...</div>
+        <button type="submit" class="gate-submit">扉をひらく</button>
+      </form>
+      <p class="gate-hint">ヒント：「◯スキマ」</p>
+      <div class="gate-line-bottom"></div>
+    </div>
+  </div>
+
+  <!-- アンロック画面 -->
+  <div id="unlock-screen">
+    <div style="text-align:center;">
+      <p class="unlock-text neon-glow-amber">UNLOCKING...</p>
+      <div class="unlock-bar-wrap">
+        <div class="unlock-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       メインページ（秘密基地）
+       テキストや画像はここを直接編集してください
+       ============================================================ -->
+  <div id="main-page">
+
+    <!-- ナビバー -->
+    <nav class="navbar" id="navbar">
+      <div class="container">
+        <a href="#" class="nav-logo" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})">裏スキマ</a>
+        <div class="nav-links">
+          <a href="#secrets">Secrets</a>
+          <a href="#about">About</a>
+        </div>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="メニュー">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- モバイルメニュー -->
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="#secrets" onclick="closeMobileMenu()">Secrets</a>
+      <a href="#about" onclick="closeMobileMenu()">About</a>
+    </div>
+
+    <!-- ヒーローセクション -->
+    <section class="hero">
+      <div class="bg-wrap">
+        <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663281517079/hxvfv5DxC7ZN7SCA68dpfq/secret-room-KwTgFSEZGdu4Sw5jVNjj6G.webp" alt="" />
+        <div class="bg-overlay"></div>
+        <div class="bg-vignette"></div>
+      </div>
+      <div class="noise-overlay"></div>
+      <div class="scanlines"></div>
+
+      <div class="hero-content">
+        <div class="hero-line"></div>
+        <p class="hero-label">Welcome to the Hidden Side</p>
+        <h1 class="hero-title">
+          <span class="white">裏スキマへ</span><br />
+          <span class="pink neon-glow-pink animate-neon-flicker">ようこそ。</span>
+        </h1>
+        <p class="hero-desc">
+          ここに来たあなたは、スキマにとって特別な人。<br />
+          特典、予告、気まぐれな企画。<br />
+          表では言わないことを、ここにだけ置いていきます。
+        </p>
+        <button class="scroll-btn" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">
+          <span>Scroll</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Aboutセクション -->
+    <section class="about-section" id="about">
+      <div class="noise-overlay"></div>
+      <div class="container" style="position:relative;z-index:10;">
+        <div class="about-grid">
+          <div class="scroll-animate">
+            <p class="about-label">( About )</p>
+            <h2 class="about-title">
+              知る人ぞ知る、<br />
+              <span class="amber neon-glow-amber">裏の入口。</span>
+            </h2>
+            <p class="about-text">
+              裏スキマは、表のページには載っていない秘密の場所。
+			  合言葉を知っている人だけがたどり着ける、ちょっとだけ特別な空間です。
+            </p>
+            <p class="about-text">
+              ここでは限定の特典や、
+			  まだ誰にも言っていないイベントの予告など
+			  ここだけの話を置いていきます。
+            </p>
+            <div class="about-line"></div>
+          </div>
+          <div class="scroll-animate" style="transition-delay: 0.15s;">
+            <div class="about-image-wrap">
+              <img src="sukima1.jpg" alt="ネオンサイン" />
+              <div class="border-offset-1"></div>
+              <div class="border-offset-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ディバイダー -->
+    <div class="container"><div class="divider"></div></div>
+
+    <!-- カードセクション -->
+    <section class="secrets-section" id="secrets">
+      <div class="noise-overlay"></div>
+      <div class="container" style="position:relative;z-index:10;">
+
+        <div class="secrets-header scroll-animate">
+          <p class="secrets-label">( Secrets )</p>
+          <h2 class="secrets-title">ここだけの話。</h2>
+        </div>
+
+        <div class="cards-grid">
+
+          <!-- カード1: 特典 -->
+          <div class="secret-card large span-7 glow-pink scroll-animate">
+            <div class="card-bg">
+              <img src="sukima6.JPG" alt="" />
+              <div class="card-gradient"></div>
+            </div>
+            <div class="card-content">
+              <div class="card-label-row">
+                <span class="card-dot pink pulse"></span>
+                <span class="card-label pink">SECRET OFFER</span>
+              </div>
+              <div class="card-icon pink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+              </div>
+              <div class="card-spacer"></div>
+              <h3 class="card-title">この画面を見せると、全品 30% OFF</h3>
+              <p class="card-desc">レジでこの画面を提示してください。スキマの裏メンバーだけの特別割引です。</p>
+            </div>
+            <div class="card-corner top-right pink"></div>
+            <div class="card-corner bottom-left pink"></div>
+          </div>
+
+          <!-- カード2: イベント -->
+          <a class="secret-card medium span-5 glow-blue scroll-animate is-link" style="transition-delay: 0.1s;" href="https://sukimamem-cra9vwxm.manus.space" target="_blank" rel="noopener noreferrer">
+            <div class="card-bg">
+              <img src="sukima4.JPG" alt="" />
+              <div class="card-gradient"></div>
+            </div>
+            <div class="card-content">
+              <div class="card-label-row">
+                <span class="card-dot blue pulse"></span>
+                <span class="card-label blue">PHOTO GALLERY</span>
+              </div>
+              <div class="card-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+              </div>
+              <div class="card-spacer"></div>
+              <h3 class="card-title">SUKIMA@HISTORY</h3>
+              <p class="card-desc">スキマの歴史を振り返る。</p>
+            </div>
+            <div class="card-corner top-right blue"></div>
+            <div class="card-corner bottom-left blue"></div>
+          </a>
+
+          <!-- カード3: 裏メニュー -->
+          <div class="secret-card medium span-5 glow-amber scroll-animate" style="transition-delay: 0.05s;">
+            <div class="card-bg">
+              <img src="sukima5.JPG" alt="" />
+              <div class="card-gradient"></div>
+            </div>
+            <div class="card-content">
+              <div class="card-label-row">
+                <span class="card-dot amber pulse"></span>
+                <span class="card-label amber">Limited edition</span>
+              </div>
+              <div class="card-icon amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div class="card-spacer"></div>
+              <h3 class="card-title">隠れスキマむし</h3>
+              <p class="card-desc">「スキマむしと共に」と伝えると、表には出ない隠れスキマむしをGETできます</p>
+            </div>
+            <div class="card-corner top-right amber"></div>
+            <div class="card-corner bottom-left amber"></div>
+          </div>
+
+          <!-- カード4: 気まぐれ更新 -->
+          <div class="secret-card large span-7 glow-green scroll-animate" style="transition-delay: 0.15s;">
+            <div class="card-bg">
+              <img src="sukima7.JPG" alt="" />
+              <div class="card-gradient"></div>
+            </div>
+            <div class="card-content">
+              <div class="card-label-row">
+                <span class="card-dot green pulse"></span>
+                <span class="card-label green">RANDOM UPDATE</span>
+              </div>
+              <div class="card-icon green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+              </div>
+              <div class="card-spacer"></div>
+              <h3 class="card-title">この場所は気まぐれに更新されます</h3>
+              <p class="card-desc">時々のぞいてみてください。新しい秘密が追加されているかもしれません。</p>
+            </div>
+            <div class="card-corner top-right green"></div>
+            <div class="card-corner bottom-left green"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="site-footer">
+      <div class="noise-overlay"></div>
+      <div class="container" style="position:relative;z-index:10;">
+        <div class="scroll-animate">
+          <p class="footer-brand">裏スキマ</p>
+          <p class="footer-text">さあ、次はどんな面白いことをしようか</p>
+          <div class="footer-line"></div>
+          <p class="footer-copy">&copy; 裏スキマ | SECRET ROUTE</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ============================================================
+       JavaScript
+       ============================================================ -->
+  <script>
+    // ■ 合言葉（ここを変更すると合言葉が変わります）
+    const CORRECT_PASSWORD = '裏スキマ';
+
+    // --- 訪問者カウント（ランダム表示） ---
+    document.getElementById('visitor-count').textContent = Math.floor(Math.random() * 30) + 20;
+
+    // --- 背景画像のフェードイン ---
+    const gateBgImg = document.getElementById('gate-bg-img');
+    if (gateBgImg.complete) {
+      gateBgImg.classList.add('loaded');
+    } else {
+      gateBgImg.onload = () => gateBgImg.classList.add('loaded');
+    }
+
+    const passwordInput = document.getElementById('password-input');
+
+    // --- パスワード送信 ---
+    const gateForm = document.getElementById('gate-form');
+    const gateError = document.getElementById('gate-error');
+    const gatePage = document.getElementById('gate-page');
+    const unlockScreen = document.getElementById('unlock-screen');
+    const mainPage = document.getElementById('main-page');
+
+    gateForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (passwordInput.value === CORRECT_PASSWORD) {
+        // 正解 → アンロック演出
+        gatePage.classList.add('exiting');
+        setTimeout(() => {
+          gatePage.style.display = 'none';
+          unlockScreen.classList.add('active');
+          setTimeout(() => {
+            unlockScreen.classList.remove('active');
+            unlockScreen.style.display = 'none';
+            mainPage.classList.add('active');
+            initScrollAnimations();
+          }, 1800);
+        }, 800);
+      } else {
+        // 不正解
+        passwordInput.classList.add('error');
+        gateError.classList.add('show');
+        setTimeout(() => {
+          passwordInput.classList.remove('error');
+          gateError.classList.remove('show');
+        }, 2000);
+      }
+    });
+
+    // --- ナビバーのスクロール検知 ---
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 80) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    }, { passive: true });
+
+    // --- モバイルメニュー ---
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    let mobileOpen = false;
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileOpen = !mobileOpen;
+      mobileMenu.classList.toggle('open', mobileOpen);
+      mobileMenuBtn.innerHTML = mobileOpen
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>';
+    });
+    function closeMobileMenu() {
+      mobileOpen = false;
+      mobileMenu.classList.remove('open');
+      mobileMenuBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>';
+    }
+
+    // --- スクロールアニメーション（IntersectionObserver） ---
+    function initScrollAnimations() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '-60px' });
+
+      document.querySelectorAll('.scroll-animate').forEach(el => {
+        observer.observe(el);
+      });
+    }
+  </script>
+
+</body>
+</html>
